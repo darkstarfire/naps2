@@ -28,6 +28,13 @@ internal static class ImageExportHelper
             imageFileFormat = ImageFileFormat.Jpeg;
             return image.SaveToMemoryStream(ImageFileFormat.Jpeg, new ImageSaveOptions { Quality = quality });
         }
+        if (image.LogicalPixelFormat is ImagePixelFormat.Gray8 or ImagePixelFormat.RGB24)
+        {
+            // Grayscale and color scans are photographic or text, where JPEG is far smaller and faster than PNG.
+            // Skip the PNG attempt, which is expensive for large scanned pages.
+            imageFileFormat = ImageFileFormat.Jpeg;
+            return image.SaveToMemoryStream(ImageFileFormat.Jpeg, new ImageSaveOptions { Quality = quality });
+        }
         // Save as PNG/JPEG depending on which is smaller
         var pngEncoded = image.SaveToMemoryStream(ImageFileFormat.Png);
         var jpegEncoded = image.SaveToMemoryStream(ImageFileFormat.Jpeg, new ImageSaveOptions { Quality = quality });
