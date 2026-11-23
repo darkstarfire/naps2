@@ -412,6 +412,12 @@ internal class SaneScanDriver : IScanDriver
             controller.TrySet(SaneOptionNames.DUPLEX, SaneOptionMatchers.DuplexOptionBoth);
         }
 
+        if (optionData.IsFeeder)
+        {
+            // Only drivers that expose the option (e.g. Fujitsu ADFs) will accept it; others ignore it
+            controller.TrySet(SaneOptionNames.PREPICK, "On");
+        }
+
         var mode = options.BitDepth switch
         {
             BitDepth.BlackAndWhite => SaneOptionMatchers.BlackAndWhite,

@@ -17,4 +17,7 @@ internal static class SaneOptionNames
     public const string TOP_LEFT_Y = "tl-y";
     public const string BOT_RIGHT_X = "br-x";
     public const string BOT_RIGHT_Y = "br-y";
+
+    // Fujitsu ADF option: grab the next sheet while the current one is being read
+    public const string PREPICK = "prepick";
 }

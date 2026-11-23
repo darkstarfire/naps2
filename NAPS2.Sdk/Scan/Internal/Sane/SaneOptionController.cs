@@ -54,6 +54,31 @@ internal class SaneOptionController
         }
     }
 
+    public bool TrySet(string name, string value)
+    {
+        _logger.LogDebug($"Maybe setting {name}");
+        if (!_options.ContainsKey(name))
+            return false;
+        var opt = _options[name];
+        if (!opt.IsSettable || opt.Type != SaneValueType.String || opt.StringList?.Contains(value) != true)
+            return false;
+        try
+        {
+            _logger.LogDebug($"Setting {name} to {value}");
+            _device.SetOption(opt, value, out var info);
+            if (info.HasFlag(SaneOptionSetInfo.ReloadOptions))
+            {
+                LoadOptions();
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error writing SANE option {OptionName}", name);
+            return false;
+        }
+    }
+
     public bool TrySet(string name, double value)
     {
         _logger.LogDebug($"Maybe setting {name}");
