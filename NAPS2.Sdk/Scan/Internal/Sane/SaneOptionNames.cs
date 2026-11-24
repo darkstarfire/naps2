@@ -20,4 +20,7 @@ internal static class SaneOptionNames
 
     // Fujitsu ADF option: grab the next sheet while the current one is being read
     public const string PREPICK = "prepick";
+
+    // Fujitsu ADF option: read pages quickly from the ADF into the scanner's internal memory
+    public const string BUFFERMODE = "buffermode";
 }

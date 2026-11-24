@@ -416,6 +416,7 @@ internal class SaneScanDriver : IScanDriver
         {
             // Only drivers that expose the option (e.g. Fujitsu ADFs) will accept it; others ignore it
             controller.TrySet(SaneOptionNames.PREPICK, "On");
+            controller.TrySet(SaneOptionNames.BUFFERMODE, "On");
         }
 
         var mode = options.BitDepth switch
