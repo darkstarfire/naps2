@@ -1,4 +1,6 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NAPS2.Images.Bitwise;
@@ -287,10 +289,48 @@ internal class SaneScanDriver : IScanDriver
                     }
                     else
                     {
-                        while (ScanPage(device, scanEvents, optionData) is { } image)
+                        // Read pages on this thread and hand each one to a second thread for post-processing and
+                        // delivery. Otherwise the scanner waits for each page to be processed before feeding the next
+                        // sheet, and its internal buffer (buffermode) fills up and stalls the feeder.
+                        using var pages = new BlockingCollection<IMemoryImage>(2);
+                        Exception? consumerError = null;
+                        var consumer = Task.Run(() =>
                         {
-                            hasAtLeastOneImage = true;
-                            callback(image);
+                            foreach (var page in pages.GetConsumingEnumerable())
+                            {
+                                if (Volatile.Read(ref consumerError) != null)
+                                {
+                                    page.Dispose();
+                                    continue;
+                                }
+                                try
+                                {
+                                    callback(page);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Volatile.Write(ref consumerError, ex);
+                                }
+                            }
+                        });
+                        try
+                        {
+                            IMemoryImage? image;
+                            while (Volatile.Read(ref consumerError) == null
+                                   && (image = ScanPage(device, scanEvents, optionData)) != null)
+                            {
+                                hasAtLeastOneImage = true;
+                                pages.Add(image);
+                            }
+                        }
+                        finally
+                        {
+                            pages.CompleteAdding();
+                            consumer.Wait();
+                        }
+                        if (Volatile.Read(ref consumerError) is { } error)
+                        {
+                            ExceptionDispatchInfo.Capture(error).Throw();
                         }
                     }
                 }
